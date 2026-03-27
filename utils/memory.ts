@@ -1,5 +1,3 @@
-import { pipeline } from '@xenova/transformers';
-
 // ── Singleton embedding model ─────────────────────────────────────────────────
 // Persists between requests within the same Node.js process so the 30MB model
 // is only downloaded and loaded once.
@@ -22,6 +20,12 @@ async function getExtractor(): Promise<any | null> {
         const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Embedding model load timeout')), 5000)
         );
+        
+        // Lazy load transformers
+        const { pipeline, env } = await import('@xenova/transformers');
+        env.allowLocalModels = false;
+        env.useBrowserCache = false;
+        
         extractor = await Promise.race([
             pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true }),
             timeoutPromise,
