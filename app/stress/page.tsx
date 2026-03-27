@@ -30,8 +30,8 @@ const isAbortError = (err: any) =>
   err?.reason?.includes?.('Component Unmount') ||
   err?.reason === 'Component Unmount';
 
-const BACKEND_URL = "/api/v1/stress";
-const POSTURE_URL = "/api/v1/posture";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+const POSTURE_URL = process.env.NEXT_PUBLIC_POSTURE_URL || "http://localhost:8001";
 
 export default function StressAnalysisPage() {
   const router = useRouter();
