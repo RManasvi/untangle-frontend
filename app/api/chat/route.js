@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { retrieveMemories, saveMemory } from '@/utils/memory';
 import { detectCrisisIntent, CRISIS_RESPONSE } from '@/utils/safety';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -6,22 +6,16 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    turbopack: {
-      // Silence internal workspace warnings from having multiple 
-      // package-lock.json or package.json files in parent folders
-      root: '../',
-    },
-  },
+  serverExternalPackages: ['sharp', 'onnxruntime-node', '@xenova/transformers'],
   async rewrites() {
     return [
       {
         source: '/api/v1/stress/:path*',
-        destination: 'http://127.0.0.1:8000/:path*',
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'}/:path*`,
       },
       {
         source: '/api/v1/posture/:path*',
-        destination: 'http://127.0.0.1:8001/:path*',
+        destination: `${process.env.NEXT_PUBLIC_POSTURE_URL || 'http://127.0.0.1:8001'}/:path*`,
       },
     ]
   },
