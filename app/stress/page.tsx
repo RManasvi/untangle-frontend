@@ -30,8 +30,8 @@ const isAbortError = (err: any) =>
   err?.reason?.includes?.('Component Unmount') ||
   err?.reason === 'Component Unmount';
 
-const BACKEND_URL = "http://localhost:8000";
-const POSTURE_URL = "http://localhost:8001";
+const BACKEND_URL = "/api/v1/stress";
+const POSTURE_URL = "/api/v1/posture";
 
 export default function StressAnalysisPage() {
   const router = useRouter();
@@ -470,7 +470,7 @@ export default function StressAnalysisPage() {
             <Alert className="bg-amber-500/10 border-amber-500/20 text-amber-400">
               <Zap className="h-5 w-5" />
               <AlertDescription className="font-medium">
-                Backend is unreachable. Please ensure the Python server is running on <code className="bg-black/40 px-1.5 py-0.5 rounded text-white font-mono">localhost:8000</code>
+                Backend is unreachable. The stress analysis server may be starting up — please wait a moment and try again.
               </AlertDescription>
             </Alert>
           )}

@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic'; // Prevents Next.js from statically caching this route
 
-const STRESS_URL = process.env.STRESS_SERVICE_URL || 'http://127.0.0.1:8000';
-const POSTURE_URL = process.env.POSTURE_SERVICE_URL || 'http://127.0.0.1:8001';
+const STRESS_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+const POSTURE_URL = process.env.NEXT_PUBLIC_POSTURE_URL || 'http://127.0.0.1:8001';
 
 // ── Server-side module-level cache ──────────────────────────────────────────
 let cachedResult: Record<string, unknown> | null = null;
