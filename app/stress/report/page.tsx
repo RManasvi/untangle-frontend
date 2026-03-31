@@ -82,23 +82,42 @@ export default function AnalysisReportPage() {
     const consecutiveHighStressCount = useRef(0);
     const [hasRedirected, setHasRedirected] = useState(false);
 
-const DIRECT_BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-const { data, isLoading, error: swrError } = useSWR<AnalysisData>(`${DIRECT_BACKEND}/analyze`, fetcher, {
-    refreshInterval: 1200,       
-    fallbackData: DEFAULT_DATA,
-    shouldRetryOnError: false,
-    keepPreviousData: true,      
-    revalidateOnFocus: false,    
-    revalidateOnReconnect: false,
-    dedupingInterval: 1000,
-    errorRetryCount: 0,
-})
+    // Fix 4 — Reset counter and redirect flag on page mount
+    useEffect(() => {
+        consecutiveHighStressCount.current = 0;
+        setHasRedirected(false);
+    }, []);
 
-    // Redirect logic for high stress
+    // Fix 1 — Use internal Next.js API route (avoids CORS from direct Render calls)
+    const { data, isLoading, error: swrError } = useSWR<AnalysisData>('/api/analysis', fetcher, {
+        refreshInterval: 1200,       
+        fallbackData: DEFAULT_DATA,
+        shouldRetryOnError: false,
+        keepPreviousData: true,      
+        revalidateOnFocus: false,    
+        revalidateOnReconnect: false,
+        dedupingInterval: 1000,
+        errorRetryCount: 0,
+    })
+
+    // Fix 2 — Redirect logic for high stress with proper guards
     useEffect(() => {
         if (!data || hasRedirected) return;
 
+        // Guard 1: If data is default/empty (no active session), skip redirect entirely
+        if (data === DEFAULT_DATA) return;
+
+        // Guard 2: If Python backends are offline, skip redirect
+        if ((data as any).pythonServicesOnline === false) return;
+
         const percentage = data.combinedStress;
+
+        // Guard 3: If stress is 0 (no session active), reset counter and return
+        if (percentage === 0) {
+            consecutiveHighStressCount.current = 0;
+            return;
+        }
+
         console.log(`[Report] Current Stress: ${percentage}%. Consecutive High: ${consecutiveHighStressCount.current}`);
 
         if (percentage >= 50) {
@@ -108,20 +127,17 @@ const { data, isLoading, error: swrError } = useSWR<AnalysisData>(`${DIRECT_BACK
         }
 
         if (consecutiveHighStressCount.current >= 5) {
-            console.log("[Report] High stress threshold met. Triggering redirect and shutdown.");
+            console.log("[Report] High stress threshold met. Triggering redirect.");
             setHasRedirected(true);
 
-            // Signal any active analyzer tabs to stop their camera and redirect
             try {
                 const bc = new BroadcastChannel('stress_channel');
                 bc.postMessage({ action: 'stop-camera', redirect: true });
-                console.log("[Report] Broadcast stop-camera sent.");
                 bc.close();
             } catch (e) {
                 console.error("Failed to broadcast stop-camera", e);
             }
 
-            // Store data for chat context
             localStorage.setItem(
                 "stress_detected",
                 JSON.stringify({
@@ -131,10 +147,6 @@ const { data, isLoading, error: swrError } = useSWR<AnalysisData>(`${DIRECT_BACK
                 })
             );
 
-            // Use router.push for smoother transition, or window.location.href for hard reset
-            // If the user preferred window.location.href, we should at least wrap it in a microtask
-            // to allow current execution to finish without aborting fetches immediately.
-            console.log("[Report] Redirecting to /chat...");
             setTimeout(() => {
                 window.location.href = "/chat";
             }, 100);
