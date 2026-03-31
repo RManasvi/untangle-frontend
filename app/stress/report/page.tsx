@@ -82,16 +82,17 @@ export default function AnalysisReportPage() {
     const consecutiveHighStressCount = useRef(0);
     const [hasRedirected, setHasRedirected] = useState(false);
 
-    const { data, isLoading, error: swrError } = useSWR<AnalysisData>('/api/analysis', fetcher, {
-        refreshInterval: 1200,       
-        fallbackData: DEFAULT_DATA,
-        shouldRetryOnError: false,
-        keepPreviousData: true,      
-        revalidateOnFocus: false,    
-        revalidateOnReconnect: false,
-        dedupingInterval: 1000,
-        errorRetryCount: 0,
-    })
+const DIRECT_BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const { data, isLoading, error: swrError } = useSWR<AnalysisData>(`${DIRECT_BACKEND}/analyze`, fetcher, {
+    refreshInterval: 1200,       
+    fallbackData: DEFAULT_DATA,
+    shouldRetryOnError: false,
+    keepPreviousData: true,      
+    revalidateOnFocus: false,    
+    revalidateOnReconnect: false,
+    dedupingInterval: 1000,
+    errorRetryCount: 0,
+})
 
     // Redirect logic for high stress
     useEffect(() => {
