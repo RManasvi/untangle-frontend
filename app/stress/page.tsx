@@ -84,25 +84,41 @@ export default function StressAnalysisPage() {
   
   // Check backend health on mount
   useEffect(() => {
+    const controller = new AbortController();
+
     const checkHealth = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/health`);
-        setBackendStatus(res.ok ? "Online" : "Offline");
+        const res = await fetch(`${BACKEND_URL}/health`, {
+          signal: controller.signal
+        });
+        if (res.ok) {
+          setBackendStatus("Online");
+          setError(null);
+        } else {
+          setBackendStatus("Offline");
+        }
       } catch (err: any) {
-        if (isAbortError(err)) return; // ✅ ignore HMR abort
+        if (err?.name === 'AbortError') return;
         setBackendStatus("Offline");
       }
+
       try {
-        const res = await fetch(`${POSTURE_URL}/health`);
+        const res = await fetch(`${POSTURE_URL}/health`, {
+          signal: controller.signal
+        });
         setPostureStatus(res.ok ? "Online" : "Offline");
       } catch (err: any) {
-        if (isAbortError(err)) return; // ✅ ignore HMR abort
+        if (err?.name === 'AbortError') return;
         setPostureStatus("Offline");
       }
     };
+
     checkHealth();
     const interval = setInterval(checkHealth, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort();
+    };
   }, []);
 
   // Frame capture and analysis loop
@@ -191,6 +207,11 @@ export default function StressAnalysisPage() {
             }
           } catch (err: any) {
             if (isAbortError(err)) return; // ✅ ignore Turbopack HMR abort
+            if (err?.message === 'Failed to fetch') {
+              console.warn('[Stress] Backend unreachable — is Python server running on localhost:8000?');
+              setBackendStatus("Offline");
+              return;
+            }
             console.error("Analysis failed:", err?.message || err);
             setBackendStatus("Offline");
           }
